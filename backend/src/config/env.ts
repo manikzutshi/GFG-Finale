@@ -14,7 +14,7 @@ const EnvSchema = z.object({
   GEMINI_MODEL: optionalString.default("gemini-2.5-flash"),
   DATABASE_URL: optionalString,
   TAVILY_API_KEY: optionalString,
-  BACKEND_PORT: z.coerce.number().int().positive().default(4311),
+  BACKEND_PORT: z.coerce.number().int().positive().default(Number(process.env.PORT) || 4311),
   CORS_ORIGINS: optionalString.default("http://localhost:4310"),
   AI_DETECTION_API_URL: optionalString.pipe(z.string().url().optional()),
   AI_DETECTION_API_KEY: optionalString
