@@ -17,7 +17,8 @@ export function Sidebar({
     async function fetchBookmarks() {
       try {
         setLoading(true);
-        const res = await fetch("http://localhost:4311/api/bookmarks");
+        const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4311";
+        const res = await fetch(`${API_URL}/api/bookmarks`);
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
         // Reverse so newest are at the top

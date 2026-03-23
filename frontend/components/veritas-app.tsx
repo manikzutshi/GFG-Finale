@@ -86,7 +86,8 @@ export function VeritasApp() {
     if (!result) return;
     setSavingBookmark(true);
     try {
-      const response = await fetch("http://localhost:4311/api/bookmarks", {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4311";
+      const response = await fetch(`${API_URL}/api/bookmarks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -142,7 +143,8 @@ export function VeritasApp() {
     setImageResult(null);
 
     try {
-      const response = await fetch("http://localhost:4311/api/check-image", {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4311";
+      const response = await fetch(`${API_URL}/api/check-image`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageUrl: imageUrl.trim() })
