@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Veritas Fact Checker",
+  "version": "1.0",
+  "description": "Extract claims, gather evidence, and verify live webpages. Designed for reuse by a future browser extension.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Fact-check this page"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://gfg-finale.onrender.com/*"
+  ]
+}
