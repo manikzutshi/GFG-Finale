@@ -122,8 +122,8 @@ export function VeritasApp() {
         margin:       0,
         filename:     `veritas-full-report-${new Date().toISOString().split("T")[0]}.pdf`,
         image:        { type: "jpeg" as const, quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 700 },
-        jsPDF:        { unit: 'px', format: [700, element.scrollHeight], orientation: 'portrait' as const }
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 700 }, // Scaled linearly
+        jsPDF:        { unit: 'px', format: [700, element.scrollHeight] as [number, number], orientation: 'portrait' as const }
       };
 
       // Native, high-quality pagination conversion
