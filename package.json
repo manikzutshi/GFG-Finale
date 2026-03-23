@@ -1,0 +1,21 @@
+{
+  "name": "veritas-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n shared,backend,frontend -c cyan,green,magenta \"npm run dev --workspace @veritas/shared\" \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "build": "npm run build --workspace @veritas/shared && npm run build --workspace backend && npm run build --workspace frontend",
+    "test": "npm run test --workspace @veritas/shared && npm run test --workspace backend && npm run test --workspace frontend",
+    "lint": "npm run lint --workspace @veritas/shared && npm run lint --workspace backend && npm run lint --workspace frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
+
