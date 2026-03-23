@@ -18,6 +18,7 @@ import { ThemeToggle } from "./theme-toggle";
 
 export function VeritasApp() {
   const [activeTab, setActiveTab] = useState<"text" | "image">("text");
+  const [inputType, setInputType] = useState<"url" | "text">("url");
   
   // Text analysis state
   const [inputText, setInputText] = useState("");
@@ -27,6 +28,7 @@ export function VeritasApp() {
   const [loading, setLoading] = useState(false);
   const [savingBookmark, setSavingBookmark] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarkId, setBookmarkId] = useState<string | null>(null);
   const [refreshSidebar, setRefreshSidebar] = useState(0);
   
   // Image analysis state
@@ -73,6 +75,7 @@ export function VeritasApp() {
       startTransition(() => {
         setResult(response);
         setBookmarked(false);
+        setBookmarkId(null);
         setActiveClaimId(response.claims[0]?.id ?? null);
       });
     } catch (caughtError) {
@@ -87,26 +90,35 @@ export function VeritasApp() {
     setSavingBookmark(true);
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4311";
+      
+      if (bookmarked && bookmarkId) {
+        const res = await fetch(`${API_URL}/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Failed to remove bookmark");
+        setBookmarked(false);
+        setBookmarkId(null);
+        setRefreshSidebar((prev) => prev + 1);
+        return;
+      }
+
       const response = await fetch(`${API_URL}/api/bookmarks`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          inputUrl: inputUrl.trim() || undefined,
-          inputText: inputText.trim() || undefined,
-          analysisResult: result
+          inputUrl: inputType === "url" ? inputUrl.trim() || undefined : undefined,
+          inputText: inputType === "text" ? inputText.trim() || undefined : undefined,
+          analysisResult: result,
+          source: "web",
+          type: inputType
         })
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to save bookmark");
-      }
+      if (!response.ok) throw new Error("Failed to save bookmark");
+      const data = await response.json();
+      setBookmarkId(data.id);
       setBookmarked(true);
       setRefreshSidebar((prev) => prev + 1);
     } catch (err) {
-      console.error("Error saving bookmark:", err);
-      // We could add a toast here ideally, but falling back to simple console for now
+      console.error("Error toggling bookmark:", err);
     } finally {
       setSavingBookmark(false);
     }
@@ -164,14 +176,16 @@ export function VeritasApp() {
     }
   }
 
-  function handleSelectBookmark(savedResult: any, savedUrl: string, savedText: string) {
+  function handleSelectBookmark(savedResult: any, savedUrl: string, savedText: string, savedId: string) {
     startTransition(() => {
       setActiveTab("text");
       setInputUrl(savedUrl);
       setInputText(savedText);
+      setInputType(savedUrl ? "url" : "text");
       setResult(savedResult);
       setActiveClaimId(savedResult.claims?.[0]?.id ?? null);
       setBookmarked(true);
+      setBookmarkId(savedId);
       setError(null);
     });
   }
@@ -198,18 +212,16 @@ export function VeritasApp() {
           <ThemeToggle />
         </div>
       </section>
-      <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
+      <div style={{ display: "flex", gap: "8px", marginBottom: "32px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", padding: "6px", borderRadius: "20px", width: "fit-content", backdropFilter: "blur(20px)", boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
         <button 
           onClick={() => setActiveTab("text")}
-          className="citation-toggle"
-          style={{ background: activeTab === "text" ? "var(--paper)" : "transparent", padding: "10px 16px", fontWeight: activeTab === "text" ? 600 : 400 }}
+          style={{ background: activeTab === "text" ? "rgba(255,255,255,0.1)" : "transparent", color: activeTab === "text" ? "#fff" : "var(--muted)", padding: "12px 24px", borderRadius: "14px", fontWeight: activeTab === "text" ? 600 : 500, border: "none", cursor: "pointer", transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)", fontSize: "14px", boxShadow: activeTab === "text" ? "0 4px 12px rgba(0,0,0,0.1)" : "none" }}
         >
           Fact-Check Text/URL
         </button>
         <button 
           onClick={() => setActiveTab("image")}
-          className="citation-toggle"
-          style={{ background: activeTab === "image" ? "var(--paper)" : "transparent", padding: "10px 16px", fontWeight: activeTab === "image" ? 600 : 400 }}
+          style={{ background: activeTab === "image" ? "rgba(255,255,255,0.1)" : "transparent", color: activeTab === "image" ? "#fff" : "var(--muted)", padding: "12px 24px", borderRadius: "14px", fontWeight: activeTab === "image" ? 600 : 500, border: "none", cursor: "pointer", transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)", fontSize: "14px", boxShadow: activeTab === "image" ? "0 4px 12px rgba(0,0,0,0.1)" : "none" }}
         >
           AI Image Detector
         </button>
@@ -219,35 +231,56 @@ export function VeritasApp() {
       <section className="workspace-grid">
         <div className="left-column">
           <form className="panel input-panel" onSubmit={handleAnalyze}>
-            <div className="panel-header">
-              <div>
-                <p className="eyebrow">Input</p>
-                <h3>Submit text or a URL</h3>
+            <div className="panel-header" style={{ marginBottom: "16px" }}>
+              <div style={{ width: "100%" }}>
+                <p className="eyebrow" style={{ marginBottom: "12px" }}>Data Source</p>
+                <div style={{ display: "flex", gap: "6px", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", padding: "4px", borderRadius: "12px", width: "100%" }}>
+                  <button 
+                    type="button"
+                    onClick={() => { setInputType("url"); setInputText(""); }}
+                    style={{ flex: 1, background: inputType === "url" ? "rgba(255,255,255,0.1)" : "transparent", color: inputType === "url" ? "#fff" : "var(--muted)", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, border: "none", cursor: "pointer", transition: "all 0.2s ease", boxShadow: inputType === "url" ? "0 2px 8px rgba(0,0,0,0.2)" : "none" }}
+                  >
+                    Web URL
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => { setInputType("text"); setInputUrl(""); }}
+                    style={{ flex: 1, background: inputType === "text" ? "rgba(255,255,255,0.1)" : "transparent", color: inputType === "text" ? "#fff" : "var(--muted)", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, border: "none", cursor: "pointer", transition: "all 0.2s ease", boxShadow: inputType === "text" ? "0 2px 8px rgba(0,0,0,0.2)" : "none" }}
+                  >
+                    Raw Text
+                  </button>
+                </div>
               </div>
             </div>
 
-            <label className="field-label" htmlFor="input-url">
-              URL
-            </label>
-            <input
-              id="input-url"
-              className="text-input"
-              value={inputUrl}
-              onChange={(event) => setInputUrl(event.target.value)}
-              placeholder="https://example.com/article"
-            />
-
-            <label className="field-label" htmlFor="input-text">
-              Text
-            </label>
-            <textarea
-              id="input-text"
-              className="text-area"
-              value={inputText}
-              onChange={(event) => setInputText(event.target.value)}
-              placeholder="Paste the content you want to fact-check."
-              rows={10}
-            />
+            <div style={{ opacity: 1, transition: "opacity 0.3s ease" }}>
+              {inputType === "url" ? (
+                <>
+                  <label className="field-label" htmlFor="input-url">Target URL</label>
+                  <input
+                    id="input-url"
+                    className="text-input"
+                    style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.06)", color: "#fff" }}
+                    value={inputUrl}
+                    onChange={(event) => setInputUrl(event.target.value)}
+                    placeholder="https://example.com/article"
+                  />
+                </>
+              ) : (
+                <>
+                  <label className="field-label" htmlFor="input-text">Content Body</label>
+                  <textarea
+                    id="input-text"
+                    className="text-area"
+                    style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.06)", color: "#fff" }}
+                    value={inputText}
+                    onChange={(event) => setInputText(event.target.value)}
+                    placeholder="Paste the entire text segment you want to verify."
+                    rows={8}
+                  />
+                </>
+              )}
+            </div>
 
             <div className="form-actions">
               <button
@@ -261,13 +294,26 @@ export function VeritasApp() {
             </div>
           </form>
 
-          <PipelineStatus loading={loading} activeStage={activeStage} trace={result?.trace} />
+          {isPending || loading ? (
+            <PipelineStatus loading={loading} activeStage={activeStage} trace={result?.trace} />
+          ) : null}
 
-          <SourceTextPanel
-            sourceText={result?.source_text ?? inputText}
-            claims={result?.claims ?? []}
-            activeClaimId={deferredActiveClaimId}
-          />
+          {result ? (
+            <details className="panel" style={{ cursor: "pointer", outline: "none", padding: 0, overflow: "hidden", transition: "all 0.3s ease" }}>
+              <summary className="eyebrow" style={{ margin: 0, padding: "18px 22px", fontWeight: 700, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>Review Core Diagnostics & Source Mapping</span>
+                <span style={{ fontSize: "16px", opacity: 0.5 }}>↓</span>
+              </summary>
+              <div style={{ padding: "22px", borderTop: "1px solid var(--line)", cursor: "default", display: "flex", flexDirection: "column", gap: "24px", background: "rgba(0,0,0,0.15)", maxHeight: "500px", overflowY: "auto" }}>
+                <PipelineStatus loading={loading} activeStage={activeStage} trace={result.trace} />
+                <SourceTextPanel
+                  sourceText={result.source_text ?? inputText}
+                  claims={result.claims ?? []}
+                  activeClaimId={deferredActiveClaimId}
+                />
+              </div>
+            </details>
+          ) : null}
         </div>
 
         <div className="right-column">
@@ -345,12 +391,15 @@ export function VeritasApp() {
           </div>
 
           {result?.warnings.length ? (
-            <div className="panel warning-panel">
-              <p className="eyebrow">Warnings</p>
-              <ul>
-                {result.warnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
-                ))}
+            <div className="panel warning-panel" style={{ background: "rgba(255, 159, 10, 0.05)", borderColor: "rgba(255, 159, 10, 0.15)" }}>
+              <p className="eyebrow" style={{ color: "var(--warning)" }}>System Diagnostics</p>
+              <ul style={{ fontSize: "13px", opacity: 0.8, marginTop: "8px", paddingLeft: "16px" }}>
+                {result.warnings.map((w) => {
+                  if (w.includes("fell back to heuristics") && w.includes("invalid_enum_value")) {
+                    return <li key={w} style={{ marginBottom: "6px" }}>Model generated unrecognized classification state ('CONFLICT'). Fallback heuristics engaged to stabilize pipeline schema structure.</li>;
+                  }
+                  return <li key={w} style={{ marginBottom: "6px" }}>{w}</li>;
+                })}
               </ul>
             </div>
           ) : null}

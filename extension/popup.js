@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const loadingEl = document.getElementById('loading');
   const errorEl = document.getElementById('error');
   const resultsEl = document.getElementById('results');
+  const bookmarkBtn = document.getElementById('bookmark-btn');
+
+  let currentAnalysisData = null;
 
   // Hardcode securely to the live Render Fastify instance
   const API_URL = "https://gfg-finale.onrender.com/analyze";
@@ -23,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     analyzeBtn.addEventListener('click', async () => {
       // Freeze UI and show loading pulse
       analyzeBtn.classList.add('hidden');
+      bookmarkBtn.classList.add('hidden');
       loadingEl.classList.remove('hidden');
       errorEl.classList.add('hidden');
       resultsEl.classList.add('hidden');
@@ -81,6 +85,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         loadingEl.classList.add('hidden');
         resultsEl.classList.remove('hidden');
+
+        // Expose bookmarking option with fresh payload
+        currentAnalysisData = data;
+        bookmarkBtn.classList.remove('hidden');
+        bookmarkBtn.textContent = "Save to Veritas Dashboard";
+        bookmarkBtn.disabled = false;
+        bookmarkBtn.style.background = "rgba(52, 199, 89, 0.15)";
+        bookmarkBtn.style.color = "#34C759";
         
       } catch (err) {
         loadingEl.classList.add('hidden');
@@ -88,6 +100,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         errorEl.classList.remove('hidden');
         analyzeBtn.classList.remove('hidden');
         analyzeBtn.textContent = "Retry Analysis";
+        bookmarkBtn.classList.add('hidden');
+        currentAnalysisData = null;
+      }
+    });
+
+    bookmarkBtn.addEventListener('click', async () => {
+      if (!currentAnalysisData) return;
+      
+      bookmarkBtn.textContent = "Saving to Cloud...";
+      bookmarkBtn.disabled = true;
+
+      try {
+        const response = await fetch("https://gfg-finale.onrender.com/api/bookmarks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            inputUrl: currentTab.url,
+            analysisResult: currentAnalysisData,
+            source: "extension",
+            type: "url"
+          })
+        });
+        
+        if (!response.ok) throw new Error("Sync failed");
+        
+        bookmarkBtn.textContent = "✓ Synced to Dashboard";
+        bookmarkBtn.style.background = "rgba(52, 199, 89, 0.3)";
+      } catch (err) {
+        bookmarkBtn.textContent = "Failed to sync link.";
+        bookmarkBtn.style.background = "rgba(255, 69, 58, 0.15)";
+        bookmarkBtn.style.color = "#FF453A";
+        bookmarkBtn.disabled = false;
       }
     });
 

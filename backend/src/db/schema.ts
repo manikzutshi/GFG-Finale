@@ -5,5 +5,7 @@ export const bookmarks = pgTable("bookmarks", {
   inputUrl: text("input_url"),
   inputText: text("input_text"),
   analysisResult: jsonb("analysis_result").notNull(),
+  source: varchar("source", { length: 32 }).default("web").notNull(),
+  type: varchar("type", { length: 32 }).default("text").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });

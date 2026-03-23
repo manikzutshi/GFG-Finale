@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { eq, desc } from "drizzle-orm";
 
 import type { FastifyPluginAsync } from "fastify";
 import z from "zod";
@@ -9,7 +10,9 @@ import { bookmarks } from "../db/schema.js";
 const BookmarkSchema = z.object({
   inputUrl: z.string().optional(),
   inputText: z.string().optional(),
-  analysisResult: z.any()
+  analysisResult: z.any(),
+  source: z.string().optional(),
+  type: z.string().optional()
 });
 
 export const bookmarkRoutes: FastifyPluginAsync = async (app) => {
@@ -23,7 +26,7 @@ export const bookmarkRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(400).send({ error: "Invalid bookmark data." });
     }
 
-    const { inputUrl, inputText, analysisResult } = body.data;
+    const { inputUrl, inputText, analysisResult, source, type } = body.data;
 
     try {
       const result = await db
@@ -32,7 +35,9 @@ export const bookmarkRoutes: FastifyPluginAsync = async (app) => {
           id: randomUUID(),
           inputUrl: inputUrl ?? null,
           inputText: inputText ?? null,
-          analysisResult
+          analysisResult,
+          source: source ?? "web",
+          type: type ?? (inputUrl ? "url" : inputText ? "text" : "url")
         })
         .returning();
 
@@ -49,11 +54,25 @@ export const bookmarkRoutes: FastifyPluginAsync = async (app) => {
     }
 
     try {
-      const results = await db.select().from(bookmarks).orderBy(bookmarks.createdAt);
+      // Return newest bookmarks first
+      const results = await db.select().from(bookmarks).orderBy(desc(bookmarks.createdAt));
       return reply.send(results);
     } catch (err) {
       app.log.error(err);
       return reply.code(500).send({ error: "Failed to fetch bookmarks." });
+    }
+  });
+
+  app.delete("/:id", async (request, reply) => {
+    if (!db) return reply.code(503).send({ error: "Database not configured." });
+    const { id } = request.params as { id: string };
+    
+    try {
+      await db.delete(bookmarks).where(eq(bookmarks.id, id));
+      return reply.code(200).send({ success: true });
+    } catch (err) {
+      app.log.error(err);
+      return reply.code(500).send({ error: "Failed to delete bookmark." });
     }
   });
 };

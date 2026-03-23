@@ -15,23 +15,23 @@
   --radius-lg: 28px;
   --radius-md: 18px;
   --radius-sm: 12px;
-  --font-sans: "Segoe UI Variable Text", "Aptos", "Helvetica Neue", sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, sans-serif;
 }
 
 .dark {
-  --bg: #0d1117;
-  --paper: rgba(30, 35, 42, 0.9);
-  --paper-strong: #161b22;
-  --ink: #e6edf3;
-  --muted: #8b949e;
+  --bg: #000000;
+  --paper: rgba(44, 44, 46, 0.6);
+  --paper-strong: rgba(58, 58, 60, 0.6);
+  --ink: #ffffff;
+  --muted: #8e8e93;
   --line: rgba(255, 255, 255, 0.1);
-  --accent: #238636;
-  --accent-soft: rgba(46, 160, 67, 0.15);
-  --warning: #d29922;
-  --warning-soft: rgba(210, 153, 34, 0.15);
-  --danger: #f85149;
-  --danger-soft: rgba(248, 81, 73, 0.15);
-  --shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
+  --accent: #0A84FF;
+  --accent-soft: rgba(10, 132, 255, 0.15);
+  --warning: #FF9F0A;
+  --warning-soft: rgba(255, 159, 10, 0.15);
+  --danger: #FF453A;
+  --danger-soft: rgba(255, 69, 58, 0.15);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -111,8 +111,8 @@ a {
 .sidebar {
   width: 320px;
   flex-shrink: 0;
-  border-right: 1px solid var(--border);
-  background: var(--background);
+  border-right: 1px solid var(--line);
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -139,8 +139,8 @@ a {
 
 .history-card {
   background: var(--paper);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
   padding: 16px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -174,9 +174,8 @@ a {
 }
 
 .app-shell {
-  max-width: 1560px;
-  margin: 0 auto;
-  padding: 32px 24px 48px;
+  max-width: 100%;
+  padding: 32px 48px 48px;
 }
 
 .hero {
@@ -223,16 +222,41 @@ a {
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.03fr) minmax(360px, 0.97fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(400px, 1.6fr);
+  gap: 32px;
+  height: calc(100vh - 240px); /* Fits comfortably on 1080p without page-scrolling */
+  min-height: 500px;
 }
 
 .left-column,
-.right-column,
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+  padding-right: 12px;
+}
+
 .result-stack {
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+/* Global Apple-style thin stealth scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .panel,
@@ -240,10 +264,11 @@ a {
 .summary-card,
 .claim-card {
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: 20px;
   background: var(--paper);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .panel,
@@ -302,8 +327,8 @@ a {
 .text-area:focus,
 .claim-card:focus {
   outline: none;
-  border-color: rgba(14, 124, 102, 0.45);
-  box-shadow: 0 0 0 4px rgba(14, 124, 102, 0.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
 .text-area {
@@ -330,10 +355,11 @@ a {
 }
 
 .primary-button {
-  background: linear-gradient(135deg, #0e7c66 0%, #064f42 100%);
+  background: var(--accent);
   color: white;
   padding: 14px 20px;
   font-weight: 600;
+  box-shadow: 0 4px 14px var(--accent-soft);
 }
 
 .primary-button:hover,
