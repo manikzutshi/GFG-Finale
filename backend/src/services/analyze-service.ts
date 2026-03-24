@@ -173,6 +173,7 @@ export class AnalyzeService {
       claims: verified,
       ai_text_probability: aiSignals.aiTextProbability,
       ai_image_probability: aiSignals.aiImageProbability,
+      discovered_images: source.images.map(img => ({ url: img.url, alt: img.alt, host: img.host })),
       warnings: Array.from(warnings),
       trace: trace.list()
     });

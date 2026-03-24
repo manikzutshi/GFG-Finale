@@ -40,10 +40,12 @@ export function Sidebar({
     e.stopPropagation();
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4311";
-      await fetch(`${API_URL}/api/bookmarks/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/api/bookmarks/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       setBookmarks(prev => prev.filter(b => b.id !== id));
     } catch (err) {
       console.error("Failed to delete", err);
+      alert("Failed to delete from the database. Make sure your local backend (npm run dev) was restarted to load the new DELETE route!");
     }
   }
 

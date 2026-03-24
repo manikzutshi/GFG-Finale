@@ -54,6 +54,11 @@ export const AnalyzeResponseSchema = z.object({
   claims: z.array(ClaimResultSchema),
   ai_text_probability: z.number().min(0).max(100).nullable(),
   ai_image_probability: z.number().min(0).max(100).nullable(),
+  discovered_images: z.array(z.object({
+    url: z.string(),
+    alt: z.string().optional(),
+    host: z.string().optional()
+  })).optional().default([]),
   warnings: z.array(z.string()),
   trace: z.array(TraceStepSchema)
 });

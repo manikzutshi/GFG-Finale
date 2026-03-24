@@ -6,12 +6,14 @@ import { getEnv, parseCorsOrigins, type Env } from "./config/env.js";
 import { AnalyzeService } from "./services/analyze-service.js";
 import { bookmarkRoutes } from "./routes/bookmarks.js";
 import { checkImageRoutes } from "./routes/check-image.js";
+import { checkAudioRoutes } from "./routes/check-audio.js";
 
 export function createApp(options: { env?: Env; analysisService?: AnalyzeService } = {}) {
   const env = options.env ?? getEnv();
   const analysisService = options.analysisService ?? new AnalyzeService({ env });
   const app = Fastify({
-    logger: true
+    logger: true,
+    bodyLimit: 10485760 // 10MB limit for base64 image uploads
   });
   const corsOrigins = parseCorsOrigins(env.CORS_ORIGINS);
 
@@ -26,6 +28,7 @@ export function createApp(options: { env?: Env; analysisService?: AnalyzeService
 
   app.register(bookmarkRoutes, { prefix: "/api/bookmarks" });
   app.register(checkImageRoutes, { prefix: "/api/check-image" });
+  app.register(checkAudioRoutes, { prefix: "/api/check-audio" });
 
   app.post("/analyze", async (request, reply) => {
     const parsed = AnalyzeRequestSchema.safeParse(request.body ?? {});
