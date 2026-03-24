@@ -327,6 +327,33 @@ export function VeritasApp() {
     });
   }
 
+  function handleNewAnalysis() {
+    setResult(null);
+    setError(null);
+    setInputUrl("");
+    setInputText("");
+    setInputType("url");
+    setLoading(false);
+    setBookmarked(false);
+    setBookmarkId(null);
+    setActiveClaimId(null);
+    setPageImageScans([]);
+    // Image tab
+    setImageUrl("");
+    setImageFile(null);
+    setImagePreview(null);
+    setImageResult(null);
+    setImageError(null);
+    setImageInputType("url");
+    // Audio tab
+    setAudioUrl("");
+    setAudioFile(null);
+    setAudioPreview(null);
+    setAudioResult(null);
+    setAudioError(null);
+    setAudioInputType("url");
+  }
+
   return (
     <div className="app-layout">
       {result && <PdfReportTemplate ref={pdfRef} result={result} inputUrl={inputUrl} inputText={inputText} />}
@@ -347,6 +374,21 @@ export function VeritasApp() {
           <span>Gemini + Tavily</span>
           <span>Extension-ready schema</span>
           <ThemeToggle />
+          {(result || imageResult || audioResult) && (
+            <button
+              onClick={handleNewAnalysis}
+              style={{ 
+                background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)",
+                color: "#fff", padding: "8px 16px", borderRadius: "10px", 
+                fontSize: "13px", fontWeight: 600, cursor: "pointer",
+                transition: "all 0.2s ease", marginLeft: "8px"
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
+              onMouseOut={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+            >
+              ✦ New Analysis
+            </button>
+          )}
         </div>
       </section>
       <div style={{ display: "flex", gap: "8px", marginBottom: "32px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", padding: "6px", borderRadius: "20px", width: "fit-content", backdropFilter: "blur(20px)", boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>

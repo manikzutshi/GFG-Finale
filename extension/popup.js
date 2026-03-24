@@ -2,18 +2,44 @@ document.addEventListener('DOMContentLoaded', async () => {
   const urlEl = document.getElementById('current-url');
   const analyzeBtn = document.getElementById('analyze-btn');
   const loadingEl = document.getElementById('loading');
+  const loadingTextEl = document.getElementById('loading-text');
   const errorEl = document.getElementById('error');
   const resultsEl = document.getElementById('results');
   const bookmarkBtn = document.getElementById('bookmark-btn');
+  const newAnalysisBtn = document.getElementById('new-analysis-btn');
 
   let currentAnalysisData = null;
+  let currentTab = null;
 
   // Hardcode securely to the live Render Fastify instance
   const API_URL = "https://gfg-finale.onrender.com/analyze";
 
+  // Staged loading messages to keep user informed during long waits
+  const stages = [
+    "Connecting to Veritas backend...",
+    "Fetching and parsing page content...",
+    "Extracting verifiable claims...",
+    "Searching for evidence sources...",
+    "Cross-referencing citations...",
+    "Running verification engine...",
+    "Finalizing analysis report..."
+  ];
+
+  function resetUI() {
+    analyzeBtn.classList.remove('hidden');
+    analyzeBtn.textContent = "Analyze Current Context";
+    bookmarkBtn.classList.add('hidden');
+    newAnalysisBtn.classList.add('hidden');
+    loadingEl.classList.add('hidden');
+    errorEl.classList.add('hidden');
+    resultsEl.classList.add('hidden');
+    resultsEl.innerHTML = '';
+    currentAnalysisData = null;
+  }
+
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    const currentTab = tabs[0];
+    currentTab = tabs[0];
     
     if (currentTab && currentTab.url) {
       urlEl.textContent = new URL(currentTab.url).hostname;
@@ -23,24 +49,42 @@ document.addEventListener('DOMContentLoaded', async () => {
       analyzeBtn.classList.add('opacity-50', 'cursor-not-allowed');
     }
 
+    // New Analysis button handler
+    newAnalysisBtn.addEventListener('click', resetUI);
+
     analyzeBtn.addEventListener('click', async () => {
       // Freeze UI and show loading pulse
       analyzeBtn.classList.add('hidden');
       bookmarkBtn.classList.add('hidden');
+      newAnalysisBtn.classList.add('hidden');
       loadingEl.classList.remove('hidden');
       errorEl.classList.add('hidden');
       resultsEl.classList.add('hidden');
       resultsEl.innerHTML = '';
 
+      // Cycle through staged loading messages
+      let stageIndex = 0;
+      loadingTextEl.textContent = stages[0];
+      const stageTimer = setInterval(() => {
+        stageIndex++;
+        if (stageIndex < stages.length) {
+          loadingTextEl.textContent = stages[stageIndex];
+        }
+      }, 3000);
+
       try {
-        // We solely rely on sending the URL natively to perfectly mirror the web-version's exact Readability parser
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 60000); // 60s hard timeout
+
         const response = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            input_url: currentTab.url
-          })
+          body: JSON.stringify({ input_url: currentTab.url }),
+          signal: controller.signal
         });
+
+        clearTimeout(timeout);
+        clearInterval(stageTimer);
 
         if (!response.ok) {
           throw new Error(`API Connection Failed: ${response.status}`);
@@ -86,21 +130,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadingEl.classList.add('hidden');
         resultsEl.classList.remove('hidden');
 
-        // Expose bookmarking option with fresh payload
+        // Expose bookmarking + new analysis options
         currentAnalysisData = data;
         bookmarkBtn.classList.remove('hidden');
         bookmarkBtn.textContent = "Save to Veritas Dashboard";
         bookmarkBtn.disabled = false;
         bookmarkBtn.style.background = "rgba(52, 199, 89, 0.15)";
         bookmarkBtn.style.color = "#34C759";
+        newAnalysisBtn.classList.remove('hidden');
         
       } catch (err) {
+        clearInterval(stageTimer);
         loadingEl.classList.add('hidden');
-        errorEl.textContent = err.message;
+        
+        if (err.name === 'AbortError') {
+          errorEl.textContent = "Request timed out. The backend may be cold-starting — please try again in 30 seconds.";
+        } else {
+          errorEl.textContent = err.message;
+        }
+        
         errorEl.classList.remove('hidden');
         analyzeBtn.classList.remove('hidden');
         analyzeBtn.textContent = "Retry Analysis";
         bookmarkBtn.classList.add('hidden');
+        newAnalysisBtn.classList.add('hidden');
         currentAnalysisData = null;
       }
     });
